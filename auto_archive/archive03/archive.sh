@@ -19,8 +19,6 @@ architecture=arm64
 SDK_path=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
 
 
-# 先删除 xx.app 文件夹
-rm -rf *.app
 # 创建 xx.app 文件夹
 app_path="${app_name}.app"
 mkdir ${app_path}
@@ -37,10 +35,10 @@ extract_file(){
                                 # xxx.lproj 目录里包含国际化 和 storyboad 文件
                                 if test "${file##*.}" = "lproj"
                                 then
-                                        cp -r $1/$file ${app_path}/$file
+                                        cp -r $1/$file ${app_path}
                                 elif test "${file##*.}" = "xcassets"
                                 then
-                                      actool --output-format human-readable-text --notices --warnings --compress-pngs  --minimum-deployment-target ${version} --platform iphoneos --compile ${app_path} $1/$file 
+                                        cp -r $1/$file ${app_path} 
                                 else    # 其他文件则继续递归
                                         extract_file $1/$file
                                 fi
@@ -79,7 +77,14 @@ compile_recurse() {
                 then
                         if [[ $file != '.' && $file != '..' ]]
                         then
-                                compile_recurse $1/$file
+                                if test "${file##*.}" = "xcassets"
+                                then
+                                        # actool --output-format human-readable-text --notices --warnings --compress-pngs  --minimum-deployment-target ${version} --platform iphoneos --compile ${app_path} $1/$file
+                                        # rm -rf $1/$file
+                                        echo "111"
+                                else    # 其他文件则继续递归
+                                        compile_recurse $1/$file
+                                fi
                         fi
                 else    # 如果是 file
                         if test "${file##*.}" = "m"

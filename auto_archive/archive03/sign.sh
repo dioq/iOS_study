@@ -41,8 +41,6 @@ fi
 
 
 # 签名
-# 可以删掉个人证书签名不方便的文件,而不影响正常使用
-# rm -rf ${app_path}/Watch ${app_path}/PlugIns
 # 签名动态库
 if [ -d "${app_path}/Frameworks" ]; then
         /usr/bin/codesign --force --sign "$certificate" --entitlements ${entitlements} ${app_path}/Frameworks/*
