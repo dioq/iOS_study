@@ -16,7 +16,9 @@ exec_file = MyTest
 SDK_path=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
 
 # app 的 bundle id
-BundleIdentifier=cn.jobs8
+BundleIdentifier=cn.jobs8.appstudy
+# 编译架构
+architecture=arm64
 # xxx.app 路径
 app_path=./Payload/"${exec_file}.app"
 
@@ -28,7 +30,8 @@ app_pkg:
 
 # 编译Mach-O 可执行文件
 exec:
-	@${cc} -fobjc-arc -arch arm64 -fmodules -isysroot ${SDK_path} ${source} -o ${app_path}/${exec_file}
+	@${cc} -fobjc-arc -arch ${architecture} -fmodules -isysroot ${SDK_path} ${source} -o ${exec_file}
+	@mv ${exec_file} ${app_path}
 
 # 编译 .storyboard .xib 可视化文件
 nib:
