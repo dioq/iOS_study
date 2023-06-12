@@ -2,14 +2,14 @@
 <<!
 重签名
 传入参数描述:
-$1          签名所需的描述文件
-$2          待签名app路径
+$1          待签名app路径
+$2          签名所需的描述文件
 !
 
-# 描述文件路径
-mobileprovision=$1
 # 待签名 app 包路径
-app_path=$2
+app_path=$1
+# 描述文件路径
+mobileprovision=$2
 
 # 签名时用的证书
 # certificate="Apple Distribution: Lin Sheng (5YBWG2X244)"

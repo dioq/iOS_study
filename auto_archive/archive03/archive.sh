@@ -1,4 +1,10 @@
 #!/bin/bash
+<<!
+打包Xcode项目
+传入参数描述:
+$1          项目路径
+$2          项目名称
+!
 
 project_path=$1
 app_name=$2
@@ -28,11 +34,13 @@ extract_file(){
                 then
                         if [[ $file != '.' && $file != '..' ]]
                         then
-                                # xxx.lproj 是 storyboard 存放文件需要特别处理
+                                # xxx.lproj 目录里包含国际化 和 storyboad 文件
                                 if test "${file##*.}" = "lproj"
                                 then
-                                        # 将所有不同语言的 Localizatin 相关文件合并到一起
                                         cp -r $1/$file ${app_path}/$file
+                                elif test "${file##*.}" = "xcassets"
+                                then
+                                      actool --output-format human-readable-text --notices --warnings --compress-pngs  --minimum-deployment-target ${version} --platform iphoneos --compile ${app_path} $1/$file 
                                 else    # 其他文件则继续递归
                                         extract_file $1/$file
                                 fi
