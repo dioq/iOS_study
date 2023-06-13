@@ -25,7 +25,7 @@ mkdir ${app_path}
 
 
 # 提取 Xcode 工程中的必需的文件到 app 目录
-extract_file(){
+extract_file() {
         for file in `ls -a $1`
         do
                 if [ -d $1/$file ]  # 判断是否是 Directory, 如果是 Directory 则进行递归
@@ -63,6 +63,12 @@ extract_file(){
                         then
                                 cp $1/$file ${app_path}
                         elif test "${file##*.}" = "png"
+                        then
+                                cp $1/$file ${app_path}
+                        elif test "${file##*.}" = "jpeg"
+                        then
+                                cp $1/$file ${app_path}
+                        elif test "${file##*.}" = "json"
                         then
                                 cp $1/$file ${app_path}
                         fi
@@ -132,6 +138,14 @@ compile() {
 
 # 配置 Info.plist
 write_config() {
+        ## 先删除 Info.plist 里己有的项
+        /usr/libexec/PlistBuddy -c "Delete :CFBundleIdentifier" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Delete :CFBundleName" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Delete :CFBundleExecutable" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Delete :CFBundleDevelopmentRegion" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Delete :CFBundlePackageType" ${app_path}/Info.plist
+
+
         /usr/libexec/PlistBuddy -c "Add :CFBundleDevelopmentRegion string en" ${app_path}/Info.plist
         # plist文件结构的版本
 	/usr/libexec/PlistBuddy -c "Add :CFBundleInfoDictionaryVersion string 6.0" ${app_path}/Info.plist
