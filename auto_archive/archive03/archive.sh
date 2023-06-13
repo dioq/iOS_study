@@ -24,7 +24,7 @@ app_path="${app_name}.app"
 mkdir ${app_path}
 
 
-# 提取 Xcode 工程中的有用文件到 app 目录
+# 提取 Xcode 工程中的必需的文件到 app 目录
 extract_file(){
         for file in `ls -a $1`
         do
@@ -70,6 +70,14 @@ extract_file(){
         done
 }
 
+# 压缩 Assets.xcassets
+archive_assets() {
+        actool --output-format human-readable-text --notices --warnings --compress-pngs  --minimum-deployment-target ${version} --platform iphoneos --compile ${app_path} ${app_path}/Assets.xcassets
+        cp ${app_path}/Assets.xcassets/AppIcon.appiconset/icon-60@2x.png ${app_path}/AppIcon60x60@2x.png
+        rm -rf ${app_path}/Assets.xcassets
+}
+
+# 递归遍历,编译 Objective-C\C代码, 编译可视化文件 .xib .storyboard
 compile_recurse() {
         for file in `ls -a $1`
         do
@@ -77,14 +85,7 @@ compile_recurse() {
                 then
                         if [[ $file != '.' && $file != '..' ]]
                         then
-                                if test "${file##*.}" = "xcassets"
-                                then
-                                        # actool --output-format human-readable-text --notices --warnings --compress-pngs  --minimum-deployment-target ${version} --platform iphoneos --compile ${app_path} $1/$file
-                                        # rm -rf $1/$file
-                                        echo "111"
-                                else    # 其他文件则继续递归
-                                        compile_recurse $1/$file
-                                fi
+                                compile_recurse $1/$file
                         fi
                 else    # 如果是 file
                         if test "${file##*.}" = "m"
@@ -100,7 +101,6 @@ compile_recurse() {
                         elif test "${file##*.}" = "c"
                         then
                                 clang   -arch ${architecture} \
-                                        -mios-version-min=${version} \
                                         -c $1/${file} \
                                         -o $1/"${file%%.*}.o"
                                 rm -rf $1/${file}
@@ -116,8 +116,10 @@ compile_recurse() {
                 fi
         done
 }
+# 最终编译成 Mach-O 并删除剩余源文件
+compile() {
+        compile_recurse ${app_path}
 
-compile_final() {
         clang   -fmodules -fobjc-arc \
                 -isysroot ${SDK_path} \
                 -arch ${architecture} \
@@ -128,28 +130,35 @@ compile_final() {
         rm -rf ${app_path}/*.h ${app_path}/*.o
 }
 
+# 配置 Info.plist
 write_config() {
         /usr/libexec/PlistBuddy -c "Add :CFBundleDevelopmentRegion string en" ${app_path}/Info.plist
-        /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string ${app_name}" ${app_path}/Info.plist
-	/usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string ${bundle_identifier}" ${app_path}/Info.plist
         # plist文件结构的版本
 	/usr/libexec/PlistBuddy -c "Add :CFBundleInfoDictionaryVersion string 6.0" ${app_path}/Info.plist
-        /usr/libexec/PlistBuddy -c "Add :CFBundleName string ${app_name}" ${app_path}/Info.plist
         # APPL: app，FMWK: frameworks，BND: loadable bundles
 	/usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" ${app_path}/Info.plist
 	/usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0" ${app_path}/Info.plist
 	/usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1" ${app_path}/Info.plist
 	/usr/libexec/PlistBuddy -c "Add :LSRequiresIPhoneOS bool YES" ${app_path}/Info.plist
-        #/usr/libexec/PlistBuddy -c "Add :UIMainStoryboardFile string Main" ${app_path}/Info.plist
-        /usr/libexec/PlistBuddy -c "Add :UILaunchStoryboardName string LaunchScreen" ${app_path}/Info.plist
-        /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string ${version}" ${app_path}/Info.plist
         /usr/libexec/PlistBuddy -c "Add :DTPlatformName string iphoneos" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Add :UILaunchStoryboardName string LaunchScreen" ${app_path}/Info.plist
+        #/usr/libexec/PlistBuddy -c "Add :UIMainStoryboardFile string Main" ${app_path}/Info.plist
+	/usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string ${bundle_identifier}" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Add :CFBundleName string ${app_name}" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string ${app_name}" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string ${version}" ${app_path}/Info.plist
+        # 配置 iOS icon
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIcons dict" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon dict" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName string AppIcon" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles array" ${app_path}/Info.plist
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles:0 string AppIcon60x60" ${app_path}/Info.plist
 }
 
 main() {
         extract_file ${project_path}
-        compile_recurse ${app_path}
-        compile_final
+        archive_assets
+        compile
         write_config
 }
 
