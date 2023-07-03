@@ -5,11 +5,13 @@
 
 struct option longopts[] = {
     {"show", no_argument, NULL, 0x100},
-    {"query", required_argument, NULL, 0x101},
-    {"clear", required_argument, NULL, 0x102},
-    {"wx_token", required_argument, NULL, 0x103},
+    {"agrp", required_argument, NULL, 0x101},
+    {"query", no_argument, NULL, 0x102},
+    {"clear", no_argument, NULL, 0x103},
+    {"wx_token", required_argument, NULL, 0x104},
     {0, 0, 0, 0},
 };
+
 
 static NSString *databasePath = @"/var/Keychains/keychain-2.db";
 // 显示所有 agrp
@@ -148,8 +150,8 @@ void clear_by_argp(const char *agrp)
 }
 
 // 更新微信的62数据
-void update_wx_token(const char *token) {
-    if(!(token)) {
+void update_wx_token(const char *agrp,const char *token) {
+    if(!(agrp || token)) {
         printf("参数不能为空");
         return;
     }
@@ -158,7 +160,7 @@ void update_wx_token(const char *token) {
     [queryDict setObject:@"wx.dat" forKey:(__bridge id)kSecAttrAccount];
     [queryDict setObject:@"wx.dat" forKey:(__bridge id)kSecAttrService];
     // group keychain 钥匙串所在组
-    NSString *agrp_oc = @"532LCLCWL8.com.tencent.xin";
+    NSString *agrp_oc = [NSString stringWithUTF8String:agrp];
     [queryDict setObject:agrp_oc forKey:(__bridge id)kSecAttrAccessGroup];
     // 查询时这个条件必不可少
     [queryDict setObject:(__bridge id)kSecClassGenericPassword forKey:(__bridge id)kSecClass];
@@ -210,6 +212,8 @@ int main(int argc, const char *argv[])
     @autoreleasepool
     {
         int c;
+        char *agrp;
+        // char *token;
         // printf("optind:%d,opterr:%d,optopt:%d\n", optind, opterr, optopt);
         while ((c = getopt_long(argc, argv, "h", longopts, NULL)) != -1)
         {
@@ -223,26 +227,32 @@ int main(int argc, const char *argv[])
             break;
             case 0x100:
             {
-                printf("have option: --show");
+                printf("have option: --show\n");
                 dumpKeychainEntitlements();
             }
             break;
             case 0x101:
             {
-                printf("have option: --query %s", optarg);
-                query_by_argp(optarg);
+                printf("have option: --argp %s\n", optarg);
+                agrp = optarg;
             }
             break;
             case 0x102:
             {
-                printf("have option: --clear %s", optarg);
-                clear_by_argp(optarg);
+                printf("have option: --query\n");
+                query_by_argp(agrp);
             }
             break;
             case 0x103:
             {
-                printf("have option: --wx_token %s", optarg);
-                update_wx_token(optarg);
+                printf("have option: --clear\n");
+                clear_by_argp(agrp);
+            }
+            break;
+            case 0x104:
+            {
+                printf("have option: --wx_token %s\n", optarg);
+                update_wx_token(agrp,optarg);
             }
             break;
             case '?':
